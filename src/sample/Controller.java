@@ -118,6 +118,8 @@ public class Controller implements Initializable{
         File file = fileChooser.showOpenDialog(main.getPrimaryStage());
         String text = Util.readUsingBufferedReader(file.getAbsolutePath());
         ta.setText(text);
+
+
     }
 
     @FXML
@@ -170,6 +172,8 @@ public class Controller implements Initializable{
             ControllerPorter controllerPorter = loader.getController();
             controllerPorter.getLaCountWords().setText(String.valueOf(words.size()));
             controllerPorter.getLwWords().setItems(wordsList);
+            File file = Util.writeUsingFileWriter(Util.setLine(wordsList));
+            logData.add("Запись в файл: "+ file.getAbsolutePath());
 
             porterStage.showAndWait();
 
@@ -178,4 +182,6 @@ public class Controller implements Initializable{
             ex.printStackTrace();
         }
     }
+
+
 }
