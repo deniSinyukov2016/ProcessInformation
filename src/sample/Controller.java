@@ -4,13 +4,21 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class Controller implements Initializable{
@@ -23,6 +31,10 @@ public class Controller implements Initializable{
     private BoyerMoore boyerMoore;
     private ObservableList<String> searchData = FXCollections.observableArrayList();
     private ObservableList<String> logData = FXCollections.observableArrayList();
+    private ObservableList<String> wordsList = FXCollections.observableArrayList();
+    private Porter porter;
+    private List<String> words;
+
 
     @FXML
     private ListView<String> lwlog;
@@ -34,9 +46,11 @@ public class Controller implements Initializable{
     public void initialize(URL location, ResourceBundle resources) {
         search      = new Search();
         boyerMoore  = new BoyerMoore();
+        porter      = new Porter();
         searchData.add("Прямой поиск");
         searchData.add("Алгоритм Кнута, Морриса и Пратта");
         searchData.add("Алгоритм Бойера и Мура");
+        searchData.add("Алгоритм стемминга");
         lwlog.setItems(logData);
         lwlog.setEditable(false);
         cbSearch.setItems(searchData);
@@ -53,15 +67,26 @@ public class Controller implements Initializable{
     void toSearch(ActionEvent event) {
         if (correctValid()) {
             String content = "Подстрока найдена в позиции : ";
-            int indSelect = cbSearch.getSelectionModel().getSelectedIndex();
-            int point = searchLine(indSelect);
-            logData.add(cbSearch.getSelectionModel().getSelectedItem() + " в позиции: " + point);
+            if(cbSearch.getSelectionModel().getSelectedIndex() != 3) {
+                int indSelect = cbSearch.getSelectionModel().getSelectedIndex();
+                int point = searchLine(indSelect);
+                logData.add(cbSearch.getSelectionModel().getSelectedItem() + " в позиции: " + point);
 
-            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-            alert.setTitle("Результат поиска");
-            alert.setHeaderText("Результат поиска");
-            alert.setContentText(point == -1 ? "Поиск не дал результатов." : content + point);
-            alert.showAndWait();
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.setTitle("Результат поиска");
+                alert.setHeaderText("Результат поиска");
+                alert.setContentText(point == -1 ? "Поиск не дал результатов." : content + point);
+                alert.showAndWait();
+            }else if(cbSearch.getSelectionModel().getSelectedIndex() == 3){
+
+                words = porter.stem(ta.getText());
+                wordsList.clear();
+                for(String word : words){
+                    wordsList.add(word);
+                }
+                porterPanel();
+            }
+
         }
 
     }
@@ -108,11 +133,11 @@ public class Controller implements Initializable{
     protected boolean correctValid() {
 
         String errorMessage = "";
-        if (field_search.getText() == null || field_search.getText().length() == 0) {
-            errorMessage += "Вы не ввели строку для поиска\n";
-        }
+//        if (field_search.getText() == null || field_search.getText().length() == 0) {
+//            errorMessage += "Вы не ввели строку для поиска\n";
+//        }
         if (ta.getText() == null || ta.getText().length() == 0) {
-            errorMessage += "Отсутствует строка для поиска\n";
+            errorMessage += "Отсутствует тест поиска\n";
         }
 
         if (errorMessage.length() == 0) {
@@ -130,7 +155,27 @@ public class Controller implements Initializable{
             return false;
         }
     }
+    private void porterPanel() {
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("porter.fxml"));
+            BorderPane porterLayout =  loader.load();
+
+            //Отображаем главную сцену
+            Scene mainScene = new Scene(porterLayout,900,600);
+            Stage porterStage = new Stage();
+            porterStage.setTitle("Результаты поиска");
+            porterStage.setScene(mainScene);
+
+            ControllerPorter controllerPorter = loader.getController();
+            controllerPorter.getLaCountWords().setText(String.valueOf(words.size()));
+            controllerPorter.getLwWords().setItems(wordsList);
+
+            porterStage.showAndWait();
 
 
-
+        }catch (IOException ex){
+            ex.printStackTrace();
+        }
+    }
 }
